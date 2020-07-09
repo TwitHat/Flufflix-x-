@@ -9,7 +9,7 @@
     "manager",
     "3"
   ],
-  "repository": "https://github.com/TwitHat/Flufflix-x-.git",
+  "repository": "https://github.com/TwitHat/TheFlufflixbot.git",
   "env": {
     "ENV": {
       "description": "Setting this to ANYTHING will enable env variables",
