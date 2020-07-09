@@ -8,7 +8,7 @@
     "manager",
     "3"
   ],
-  "repository": "https://github.com/Dank-del/Exusiai",
+  "repository": "https://github.com/TwitHat/Flufflix-x-.git",
   "env": {
     "ENV": {
       "description": "Setting this to ANYTHING will enable env variables",

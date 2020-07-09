@@ -1,11 +1,11 @@
-![Exusiai](https://images4.alphacoders.com/102/1025384.jpg)
+![FluffliX](https://telegra.ph/file/7490865fd18b16a55ba91.jpg)
 # Exusiai
 
 An anime themed fork of [Haruka Aya](https://gitlab.com/HarukaNetwork/OSS/HarukaAya)
 A modular Telegram Python bot running on python3 with an sqlalchemy database.
 
 Can be found on telegram as [Exusiai](https://t.me/TheRealExusiaibot).
-
+[![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy)
 
 You can also join our support group [here!](https://t.me/TheRealExusiaibot)
 (Keep in the mind that we does not support any fork of Exusiai.)
