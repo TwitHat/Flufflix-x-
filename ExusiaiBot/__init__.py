@@ -39,7 +39,7 @@ if sys.version_info[0] < 3 or sys.version_info[1] < 8:
         "You MUST have a python version of at least 3.8! Multiple features depend on this. Bot quitting."
     )
     quit(1)
-    
+
 ENV = bool(os.environ.get('ENV', False))
 
 if ENV:
@@ -54,18 +54,20 @@ if ENV:
     OWNER_USERNAME = os.environ.get("OWNER_USERNAME", None)
 
     try:
-        SUDO_USERS = set(int(x) for x in os.environ.get("SUDO_USERS", "").split())
-        DEV_USERS = set(int(x) for x in os.environ.get("DEV_USERS", "").split())
+        SUDO_USERS = {int(x) for x in os.environ.get("SUDO_USERS", "").split()}
+        DEV_USERS = {int(x) for x in os.environ.get("DEV_USERS", "").split()}
     except ValueError:
         raise Exception("Your sudo or dev users list does not contain valid integers.")
 
     try:
-        SUPPORT_USERS = set(int(x) for x in os.environ.get("SUPPORT_USERS", "").split())
+        SUPPORT_USERS = {int(x) for x in os.environ.get("SUPPORT_USERS", "").split()}
     except ValueError:
         raise Exception("Your support users list does not contain valid integers.")
 
     try:
-        WHITELIST_USERS = set(int(x) for x in os.environ.get("WHITELIST_USERS", "").split())
+        WHITELIST_USERS = {
+            int(x) for x in os.environ.get("WHITELIST_USERS", "").split()
+        }
     except ValueError:
         raise Exception("Your whitelisted users list does not contain valid integers.")
 
@@ -104,21 +106,21 @@ else:
     OWNER_USERNAME = Config.OWNER_USERNAME
 
     try:
-        SUDO_USERS = set(int(x) for x in Config.SUDO_USERS or [])
-        DEV_USERS = set(int(x) for x in Config.DEV_USERS or [])
+        SUDO_USERS = {int(x) for x in Config.SUDO_USERS or []}
+        DEV_USERS = {int(x) for x in Config.DEV_USERS or []}
     except ValueError:
         raise Exception("Your sudo or dev users list does not contain valid integers.")
 
     try:
-        SUPPORT_USERS = set(int(x) for x in Config.SUPPORT_USERS or [])
+        SUPPORT_USERS = {int(x) for x in Config.SUPPORT_USERS or []}
     except ValueError:
         raise Exception("Your support users list does not contain valid integers.")
 
     try:
-        WHITELIST_USERS = set(int(x) for x in Config.WHITELIST_USERS or [])
+        WHITELIST_USERS = {int(x) for x in Config.WHITELIST_USERS or []}
     except ValueError:
         raise Exception("Your whitelisted users list does not contain valid integers.")
-        
+
     GBAN_DUMP = Config.GBAN_DUMP
     WEBHOOK = Config.WEBHOOK
     URL = Config.URL

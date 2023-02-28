@@ -39,14 +39,10 @@ def anime(bot: Bot, update: Update, args):
         score = anime.get("score")
         rating = anime.get("rating")
         genre_lst = anime.get("genres")
-        genres = ""
-        for genre in genre_lst:
-            genres += genre.get("name") + ", "
+        genres = "".join(genre.get("name") + ", " for genre in genre_lst)
         genres = genres[:-2]
-        studios = ""
         studio_lst = anime.get("studios")
-        for studio in studio_lst:
-            studios += studio.get("name") + ", "
+        studios = "".join(studio.get("name") + ", " for studio in studio_lst)
         studios = studios[:-2]
         duration = anime.get("duration")
         premiered = anime.get("premiered")
@@ -78,8 +74,8 @@ def anime(bot: Bot, update: Update, args):
         keyb = [
              [InlineKeyboardButton("More Information", url=url)]
          ]
-    
-    
+
+
     msg.reply_text(rep, parse_mode=ParseMode.HTML, reply_markup=InlineKeyboardMarkup(keyb))
     
 
@@ -104,7 +100,7 @@ def character(bot: Bot, update: Update, args):
         kanji = res.get("name_kanji")
         about = res.get("about")
         if len(about) > 4096:
-            about = about[:4000] + "..."
+            about = f"{about[:4000]}..."
         image = res.get("image_url")
         url = res.get("url")
         rep = f"<b>{name} ({kanji})</b>\n\n"
@@ -113,7 +109,7 @@ def character(bot: Bot, update: Update, args):
         keyb = [
             [InlineKeyboardButton("More Information", url=url)]
         ]
-        
+
         msg.reply_text(rep, parse_mode=ParseMode.HTML, reply_markup=InlineKeyboardMarkup(keyb))
         
         
@@ -157,9 +153,7 @@ def manga(bot: Bot, update: Update, args):
         volumes = manga.get("volumes")
         chapters = manga.get("chapters")
         genre_lst = manga.get("genres")
-        genres = ""
-        for genre in genre_lst:
-            genres += genre.get("name") + ", "
+        genres = "".join(genre.get("name") + ", " for genre in genre_lst)
         genres = genres[:-2]
         synopsis = manga.get("synopsis")
         image = manga.get("image_url")
@@ -176,7 +170,7 @@ def manga(bot: Bot, update: Update, args):
         keyb = [
             [InlineKeyboardButton("More Information", url=url)]
         ]
-        
+
         msg.reply_text(rep, parse_mode=ParseMode.HTML, reply_markup=InlineKeyboardMarkup(keyb))
         
         

@@ -23,58 +23,49 @@ from ExusiaiBot.modules.sql.locales_sql import prev_locale
 
 LANGUAGES = ['en-US', 'en-GB', 'id', 'ru', 'es']
 
-strings = {}
-
-for i in LANGUAGES:
-    strings[i] = yaml.full_load(open("locales/" + i + ".yml", "r"))
+strings = {i: yaml.full_load(open(f"locales/{i}.yml", "r")) for i in LANGUAGES}
 
 
 def tld(chat_id, t, show_none=True):
-    LANGUAGE = prev_locale(chat_id)
-
-    if LANGUAGE:
+    if LANGUAGE := prev_locale(chat_id):
         LOCALE = LANGUAGE.locale_name
         if LOCALE in ('en-US') and t in strings['en-US']:
-            result = decode(
+            return decode(
                 encode(strings['en-US'][t], 'latin-1', 'backslashreplace'),
-                'unicode-escape')
-            return result
+                'unicode-escape',
+            )
         elif LOCALE in ('en-GB') and t in strings['en-GB']:
-            result = decode(
+            return decode(
                 encode(strings['en-GB'][t], 'latin-1', 'backslashreplace'),
-                'unicode-escape')
-            return result
+                'unicode-escape',
+            )
         elif LOCALE in ('id') and t in strings['id']:
-            result = decode(
+            return decode(
                 encode(strings['id'][t], 'latin-1', 'backslashreplace'),
-                'unicode-escape')
-            return result
+                'unicode-escape',
+            )
         elif LOCALE in ('ru') and t in strings['ru']:
-            result = decode(
+            return decode(
                 encode(strings['ru'][t], 'latin-1', 'backslashreplace'),
-                'unicode-escape')
-            return result
+                'unicode-escape',
+            )
         elif LOCALE in ('es') and t in strings['es']:
-            result = decode(
+            return decode(
                 encode(strings['es'][t], 'latin-1', 'backslashreplace'),
-                'unicode-escape')
-            return result
-
+                'unicode-escape',
+            )
     if t in strings['en-US']:
-        result = decode(
+        return decode(
             encode(strings['en-US'][t], 'latin-1', 'backslashreplace'),
-            'unicode-escape')
-        return result
-
+            'unicode-escape',
+        )
     err = f"No string found for {t}.\nReport it in @exusiaisupport."
     LOGGER.warning(err)
     return err
 
 
 def tld_list(chat_id, t):
-    LANGUAGE = prev_locale(chat_id)
-
-    if LANGUAGE:
+    if LANGUAGE := prev_locale(chat_id):
         LOCALE = LANGUAGE.locale_name
         if LOCALE in ('en-US') and t in strings['en-US']:
             return strings['en-US'][t]

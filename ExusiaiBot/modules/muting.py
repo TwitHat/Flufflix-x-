@@ -45,14 +45,12 @@ def mute(bot: Bot, update: Update, args: List[str]) -> str:
     user = update.effective_user
     message = update.effective_message
 
-    conn = connected(bot, update, chat, user.id)
-    if conn:
+    if conn := connected(bot, update, chat, user.id):
         chatD = dispatcher.bot.getChat(conn)
+    elif chat.type == "private":
+        return
     else:
-        if chat.type == "private":
-            return
-        else:
-            chatD = chat
+        chatD = chat
 
     user_id = extract_user(message, args)
     if not user_id:
@@ -63,10 +61,7 @@ def mute(bot: Bot, update: Update, args: List[str]) -> str:
         message.reply_text(tld(chat.id, "mute_not_myself"))
         return ""
 
-    member = chatD.get_member(int(user_id))
-
-    if member:
-
+    if member := chatD.get_member(int(user_id)):
         if user_id in SUDO_USERS:
             message.reply_text(tld(chat.id, "mute_not_sudo"))
 
@@ -84,12 +79,7 @@ def mute(bot: Bot, update: Update, args: List[str]) -> str:
             message.reply_text(reply,
                                reply_markup=keyboard,
                                parse_mode=ParseMode.HTML)
-            return "<b>{}:</b>" \
-                   "\n#MUTE" \
-                   "\n<b>Admin:</b> {}" \
-                   "\n<b>User:</b> {}".format(html.escape(chatD.title),
-                                              mention_html(user.id, user.first_name),
-                                              mention_html(member.user.id, member.user.first_name))
+            return f"<b>{html.escape(chatD.title)}:</b>\n#MUTE\n<b>Admin:</b> {mention_html(user.id, user.first_name)}\n<b>User:</b> {mention_html(member.user.id, member.user.first_name)}"
 
         else:
             message.reply_text(
@@ -110,14 +100,12 @@ def unmute(bot: Bot, update: Update, args: List[str]) -> str:
     user = update.effective_user
     message = update.effective_message
 
-    conn = connected(bot, update, chat, user.id)
-    if conn:
+    if conn := connected(bot, update, chat, user.id):
         chatD = dispatcher.bot.getChat(conn)
+    elif chat.type == "private":
+        return
     else:
-        if chat.type == "private":
-            return
-        else:
-            chatD = chat
+        chatD = chat
 
     user_id = extract_user(message, args)
     if not user_id:
@@ -127,45 +115,37 @@ def unmute(bot: Bot, update: Update, args: List[str]) -> str:
     try:
         member = chatD.get_member(int(user_id))
     except BadRequest as excp:
-        if excp.message == "User not found.":
-            message.reply_text(tld(chat.id, "bans_err_usr_not_found"))
-            return ""
-        else:
+        if excp.message != "User not found.":
             raise
 
+        message.reply_text(tld(chat.id, "bans_err_usr_not_found"))
+        return ""
     if is_user_ban_protected(chat, user_id, member):
         message.reply_text(tld(chat.id, "unmute_is_an_admin"))
         return ""
 
-    if member.status != 'kicked' and member.status != 'left':
-        if member.can_send_messages and member.can_send_media_messages \
-                and member.can_send_other_messages and member.can_add_web_page_previews:
-            message.reply_text(
-                tld(chat.id, "unmute_not_muted").format(chatD.title))
-        else:
-            bot.restrict_chat_member(chatD.id,
-                                     int(user_id),
-                                     can_send_messages=True,
-                                     can_send_media_messages=True,
-                                     can_send_other_messages=True,
-                                     can_add_web_page_previews=True)
-            keyboard = []
-            reply = tld(chat.id, "unmute_success").format(
-                mention_html(member.user.id, member.user.first_name),
-                chatD.title)
-            message.reply_text(reply,
-                               reply_markup=keyboard,
-                               parse_mode=ParseMode.HTML)
-            return "<b>{}:</b>" \
-                   "\n#UNMUTE" \
-                   "\n<b>• Admin:</b> {}" \
-                   "\n<b>• User:</b> {}" \
-                   "\n<b>• ID:</b> <code>{}</code>".format(html.escape(chatD.title),
-                                                           mention_html(user.id, user.first_name),
-                                                           mention_html(member.user.id, member.user.first_name), user_id)
-    else:
+    if member.status in ['kicked', 'left']:
         message.reply_text(tld(chat.id, "unmute_not_in_chat"))
 
+    elif member.can_send_messages and member.can_send_media_messages \
+                and member.can_send_other_messages and member.can_add_web_page_previews:
+        message.reply_text(
+            tld(chat.id, "unmute_not_muted").format(chatD.title))
+    else:
+        bot.restrict_chat_member(chatD.id,
+                                 int(user_id),
+                                 can_send_messages=True,
+                                 can_send_media_messages=True,
+                                 can_send_other_messages=True,
+                                 can_add_web_page_previews=True)
+        keyboard = []
+        reply = tld(chat.id, "unmute_success").format(
+            mention_html(member.user.id, member.user.first_name),
+            chatD.title)
+        message.reply_text(reply,
+                           reply_markup=keyboard,
+                           parse_mode=ParseMode.HTML)
+        return f"<b>{html.escape(chatD.title)}:</b>\n#UNMUTE\n<b>• Admin:</b> {mention_html(user.id, user.first_name)}\n<b>• User:</b> {mention_html(member.user.id, member.user.first_name)}\n<b>• ID:</b> <code>{user_id}</code>"
     return ""
 
 
@@ -179,14 +159,12 @@ def temp_mute(bot: Bot, update: Update, args: List[str]) -> str:
     user = update.effective_user
     message = update.effective_message
 
-    conn = connected(bot, update, chat, user.id)
-    if conn:
+    if conn := connected(bot, update, chat, user.id):
         chatD = dispatcher.bot.getChat(conn)
+    elif chat.type == "private":
+        return
     else:
-        if chat.type == "private":
-            return
-        else:
-            chatD = chat
+        chatD = chat
 
     user_id, reason = extract_user_and_text(message, args)
 
@@ -197,12 +175,11 @@ def temp_mute(bot: Bot, update: Update, args: List[str]) -> str:
     try:
         member = chat.get_member(user_id)
     except BadRequest as excp:
-        if excp.message == "User not found":
-            message.reply_text(tld(chat.id, "mute_not_existed"))
-            return ""
-        else:
+        if excp.message != "User not found":
             raise
 
+        message.reply_text(tld(chat.id, "mute_not_existed"))
+        return ""
     if is_user_admin(chat, user_id, member):
         message.reply_text(tld(chat.id, "mute_is_admin"))
         return ""
@@ -218,22 +195,13 @@ def temp_mute(bot: Bot, update: Update, args: List[str]) -> str:
     split_reason = reason.split(None, 1)
 
     time_val = split_reason[0].lower()
-    if len(split_reason) > 1:
-        reason = split_reason[1]
-    else:
-        reason = ""
-
+    reason = split_reason[1] if len(split_reason) > 1 else ""
     mutetime = extract_time(message, time_val)
 
     if not mutetime:
         return ""
 
-    log = "<b>{}:</b>" \
-          "\n#TEMP MUTED" \
-          "\n<b>Admin:</b> {}" \
-          "\n<b>User:</b> {}" \
-          "\n<b>Time:</b> {}".format(html.escape(chat.title), mention_html(user.id, user.first_name),
-                                     mention_html(member.user.id, member.user.first_name), time_val)
+    log = f"<b>{html.escape(chat.title)}:</b>\n#TEMP MUTED\n<b>Admin:</b> {mention_html(user.id, user.first_name)}\n<b>User:</b> {mention_html(member.user.id, member.user.first_name)}\n<b>Time:</b> {time_val}"
     if reason:
         log += tld(chat.id, "bans_logger_reason").format(reason)
 
@@ -275,14 +243,12 @@ def nomedia(bot: Bot, update: Update, args: List[str]) -> str:
     user = update.effective_user
     message = update.effective_message
 
-    conn = connected(bot, update, chat, user.id)
-    if conn:
+    if conn := connected(bot, update, chat, user.id):
         chatD = dispatcher.bot.getChat(conn)
+    elif chat.type == "private":
+        return
     else:
-        if chat.type == "private":
-            return
-        else:
-            chatD = chat
+        chatD = chat
 
     user_id = extract_user(message, args)
     if not user_id:
@@ -293,9 +259,7 @@ def nomedia(bot: Bot, update: Update, args: List[str]) -> str:
         message.reply_text(tld(chat.id, "restrict_is_bot"))
         return ""
 
-    member = chatD.get_member(int(user_id))
-
-    if member:
+    if member := chatD.get_member(int(user_id)):
         if is_user_admin(chatD, user_id, member=member):
             message.reply_text(tld(chat.id, "restrict_is_admin"))
 
@@ -313,13 +277,7 @@ def nomedia(bot: Bot, update: Update, args: List[str]) -> str:
             message.reply_text(reply,
                                reply_markup=keyboard,
                                parse_mode=ParseMode.HTML)
-            return "<b>{}:</b>" \
-                   "\n#RESTRICTED" \
-                   "\n<b>• Admin:</b> {}" \
-                   "\n<b>• User:</b> {}" \
-                   "\n<b>• ID:</b> <code>{}</code>".format(html.escape(chatD.title),
-                                              mention_html(user.id, user.first_name),
-                                              mention_html(member.user.id, member.user.first_name), user_id)
+            return f"<b>{html.escape(chatD.title)}:</b>\n#RESTRICTED\n<b>• Admin:</b> {mention_html(user.id, user.first_name)}\n<b>• User:</b> {mention_html(member.user.id, member.user.first_name)}\n<b>• ID:</b> <code>{user_id}</code>"
 
         else:
             message.reply_text(tld(chat.id, "restrict_already_restricted"))
@@ -339,14 +297,12 @@ def media(bot: Bot, update: Update, args: List[str]) -> str:
     user = update.effective_user
     message = update.effective_message
 
-    conn = connected(bot, update, chat, user.id)
-    if conn:
+    if conn := connected(bot, update, chat, user.id):
         chatD = dispatcher.bot.getChat(conn)
+    elif chat.type == "private":
+        return
     else:
-        if chat.type == "private":
-            return
-        else:
-            chatD = chat
+        chatD = chat
 
     user_id = extract_user(message, args)
     if not user_id:
@@ -355,35 +311,28 @@ def media(bot: Bot, update: Update, args: List[str]) -> str:
 
     member = chatD.get_member(int(user_id))
 
-    if member.status != 'kicked' and member.status != 'left':
-        if member.can_send_messages and member.can_send_media_messages \
-                and member.can_send_other_messages and member.can_add_web_page_previews:
-            message.reply_text(
-                tld(chat.id, "unrestrict_not_restricted").format(chatD.title))
-        else:
-            bot.restrict_chat_member(chatD.id,
-                                     int(user_id),
-                                     can_send_messages=True,
-                                     can_send_media_messages=True,
-                                     can_send_other_messages=True,
-                                     can_add_web_page_previews=True)
-            keyboard = []
-            reply = tld(chat.id, "unrestrict_success").format(
-                mention_html(member.user.id, member.user.first_name),
-                chatD.title)
-            message.reply_text(reply,
-                               reply_markup=keyboard,
-                               parse_mode=ParseMode.HTML)
-            return "<b>{}:</b>" \
-                   "\n#UNRESTRICTED" \
-                   "\n<b>• Admin:</b> {}" \
-                   "\n<b>• User:</b> {}" \
-                   "\n<b>• ID:</b> <code>{}</code>".format(html.escape(chatD.title),
-                                                           mention_html(user.id, user.first_name),
-                                                           mention_html(member.user.id, member.user.first_name), user_id)
-    else:
+    if member.status in ['kicked', 'left']:
         message.reply_text(tld(chat.id, "unrestrict_not_in_chat"))
 
+    elif member.can_send_messages and member.can_send_media_messages \
+                and member.can_send_other_messages and member.can_add_web_page_previews:
+        message.reply_text(
+            tld(chat.id, "unrestrict_not_restricted").format(chatD.title))
+    else:
+        bot.restrict_chat_member(chatD.id,
+                                 int(user_id),
+                                 can_send_messages=True,
+                                 can_send_media_messages=True,
+                                 can_send_other_messages=True,
+                                 can_add_web_page_previews=True)
+        keyboard = []
+        reply = tld(chat.id, "unrestrict_success").format(
+            mention_html(member.user.id, member.user.first_name),
+            chatD.title)
+        message.reply_text(reply,
+                           reply_markup=keyboard,
+                           parse_mode=ParseMode.HTML)
+        return f"<b>{html.escape(chatD.title)}:</b>\n#UNRESTRICTED\n<b>• Admin:</b> {mention_html(user.id, user.first_name)}\n<b>• User:</b> {mention_html(member.user.id, member.user.first_name)}\n<b>• ID:</b> <code>{user_id}</code>"
     return ""
 
 
@@ -397,14 +346,12 @@ def temp_nomedia(bot: Bot, update: Update, args: List[str]) -> str:
     user = update.effective_user
     message = update.effective_message
 
-    conn = connected(bot, update, chat, user.id)
-    if conn:
+    if conn := connected(bot, update, chat, user.id):
         chatD = dispatcher.bot.getChat(conn)
+    elif chat.type == "private":
+        return
     else:
-        if chat.type == "private":
-            return
-        else:
-            chatD = chat
+        chatD = chat
 
     user_id, reason = extract_user_and_text(message, args)
 
@@ -415,12 +362,11 @@ def temp_nomedia(bot: Bot, update: Update, args: List[str]) -> str:
     try:
         member = chat.get_member(user_id)
     except BadRequest as excp:
-        if excp.message == "User not found":
-            message.reply_text(tld(chat.id, "mute_not_existed"))
-            return ""
-        else:
+        if excp.message != "User not found":
             raise
 
+        message.reply_text(tld(chat.id, "mute_not_existed"))
+        return ""
     if is_user_admin(chat, user_id, member):
         message.reply_text(tld(chat.id, "restrict_is_admin"))
         return ""
@@ -436,23 +382,13 @@ def temp_nomedia(bot: Bot, update: Update, args: List[str]) -> str:
     split_reason = reason.split(None, 1)
 
     time_val = split_reason[0].lower()
-    if len(split_reason) > 1:
-        reason = split_reason[1]
-    else:
-        reason = ""
-
+    reason = split_reason[1] if len(split_reason) > 1 else ""
     mutetime = extract_time(message, time_val)
 
     if not mutetime:
         return ""
 
-    log = "<b>{}:</b>" \
-          "\n#TEMP RESTRICTED" \
-          "\n<b>• Admin:</b> {}" \
-          "\n<b>• User:</b> {}" \
-          "\n<b>• ID:</b> <code>{}</code>" \
-          "\n<b>• Time:</b> {}".format(html.escape(chat.title), mention_html(user.id, user.first_name),
-                                       mention_html(member.user.id, member.user.first_name), user_id, time_val)
+    log = f"<b>{html.escape(chat.title)}:</b>\n#TEMP RESTRICTED\n<b>• Admin:</b> {mention_html(user.id, user.first_name)}\n<b>• User:</b> {mention_html(member.user.id, member.user.first_name)}\n<b>• ID:</b> <code>{user_id}</code>\n<b>• Time:</b> {time_val}"
     if reason:
         log += tld(chat.id, "bans_logger_reason").format(reason)
 
@@ -500,16 +436,11 @@ def muteme(bot: Bot, update: Update, args: List[str]) -> str:
         update.effective_message.reply_text(tld(chat.id, "mute_is_admin"))
         return
 
-    res = bot.restrict_chat_member(chat.id, user_id, can_send_messages=False)
-    if res:
+    if res := bot.restrict_chat_member(
+        chat.id, user_id, can_send_messages=False
+    ):
         update.effective_message.reply_text(tld(chat.id, "muteme_muted"))
-        log = "<b>{}:</b>" \
-              "\n#MUTEME" \
-              "\n<b>User:</b> {}" \
-              "\n<b>ID:</b> <code>{}</code>".format(html.escape(chat.title),
-                                                    mention_html(user.id, user.first_name), user_id)
-        return log
-
+        return f"<b>{html.escape(chat.title)}:</b>\n#MUTEME\n<b>User:</b> {mention_html(user.id, user.first_name)}\n<b>ID:</b> <code>{user_id}</code>"
     else:
         update.effective_message.reply_text(tld(chat.id, "mute_cant_mute"))
 
