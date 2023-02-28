@@ -145,9 +145,7 @@ def gban(bot: Bot, update: Update, args: List[str]):
     try:
         bot.kick_chat_member(chat.id, user_chat.id)
     except BadRequest as excp:
-        if excp.message in GBAN_ERRORS:
-            pass
-
+        pass
     sql.gban_user(user_id, user_chat.username or user_chat.first_name,
                   full_reason)
 
@@ -183,11 +181,9 @@ def ungban(bot: Bot, update: Update, args: List[str]):
     banner = update.effective_user
 
     message.reply_text(
-        "<b>Initializing Global Ban Removal</b>\n<b>Sudo Admin:</b> {}\n<b>User:</b> {}\n<b>ID:</b> <code>{}</code>\n<b>Reason:</b> {}"
-        .format(mention_html(banner.id, banner.first_name),
-                mention_html(user_chat.id, user_chat.first_name), user_chat.id,
-                reason),
-        parse_mode=ParseMode.HTML)
+        f"<b>Initializing Global Ban Removal</b>\n<b>Sudo Admin:</b> {mention_html(banner.id, banner.first_name)}\n<b>User:</b> {mention_html(user_chat.id, user_chat.first_name)}\n<b>ID:</b> <code>{user_chat.id}</code>\n<b>Reason:</b> {reason}",
+        parse_mode=ParseMode.HTML,
+    )
 
     try:
         bot.send_message(GBAN_DUMP,
@@ -242,9 +238,9 @@ def gbanlist(bot: Bot, update: Update):
 
     banfile = 'Gbanned users:\n'
     for user in banned_users:
-        banfile += "[x] {} - {}\n".format(user["name"], user["user_id"])
+        banfile += f'[x] {user["name"]} - {user["user_id"]}\n'
         if user["reason"]:
-            banfile += "Reason: {}\n".format(user["reason"])
+            banfile += f'Reason: {user["reason"]}\n'
 
     with BytesIO(str.encode(banfile)) as output:
         output.name = "gbanlist.txt"
@@ -271,8 +267,7 @@ def check_and_ban(update, user_id, should_message=True):
     message = update.effective_message
     try:
         if sw != None:
-            sw_ban = sw.get_ban(user_id)
-            if sw_ban:
+            if sw_ban := sw.get_ban(user_id):
                 spamwatch_reason = sw_ban.reason
                 chat.kick_member(user_id)
                 if should_message:
@@ -280,9 +275,7 @@ def check_and_ban(update, user_id, should_message=True):
                         chat.id,
                         "antispam_spamwatch_banned").format(spamwatch_reason),
                                        parse_mode=ParseMode.HTML)
-                    return
-                else:
-                    return
+                return
     except Exception:
         pass
 
@@ -334,7 +327,7 @@ def enforce_gban(bot: Bot, update: Update):
 @user_admin
 def antispam(bot: Bot, update: Update, args: List[str]):
     chat = update.effective_chat
-    if len(args) > 0:
+    if args:
         if args[0].lower() in ["on", "yes"]:
             sql.enable_antispam(chat.id)
             update.effective_message.reply_text(tld(chat.id, "antispam_on"))
@@ -362,34 +355,33 @@ def clear_gbans(bot: Bot, update: Update):
         except BadRequest:
             deleted += 1
             sql.ungban_user(id)
-    update.message.reply_text("Done! {} deleted accounts were removed " \
-    "from the gbanlist.".format(deleted), parse_mode=ParseMode.MARKDOWN)
+    update.message.reply_text(
+        f"Done! {deleted} deleted accounts were removed from the gbanlist.",
+        parse_mode=ParseMode.MARKDOWN,
+    )
 
 
 def __stats__():
-    return "• `{}` gbanned users [We regularly clean off deleted account from the database].".format(
-        sql.num_gbanned_users())
+    return f"• `{sql.num_gbanned_users()}` gbanned users [We regularly clean off deleted account from the database]."
 
 
 def __user_info__(user_id, chat_id):
     is_gbanned = sql.is_user_gbanned(user_id)
 
-    if not user_id in SUDO_USERS:
-
-        text = tld(chat_id, "antispam_userinfo_gbanned")
-        if is_gbanned:
-            text = text.format(tld(chat_id, "common_yes"))
-            text += tld(chat_id, "anitspam_appeal")
-            user = sql.get_gbanned_user(user_id)
-            if user.reason:
-                text += tld(chat_id, "antispam_userinfo_gban_reason").format(
-                    html.escape(user.reason))
-        else:
-            text = text.format(tld(chat_id, "common_no"))
-
-        return text
-    else:
+    if user_id in SUDO_USERS:
         return ""
+    text = tld(chat_id, "antispam_userinfo_gbanned")
+    if is_gbanned:
+        text = text.format(tld(chat_id, "common_yes"))
+        text += tld(chat_id, "anitspam_appeal")
+        user = sql.get_gbanned_user(user_id)
+        if user.reason:
+            text += tld(chat_id, "antispam_userinfo_gban_reason").format(
+                html.escape(user.reason))
+    else:
+        text = text.format(tld(chat_id, "common_no"))
+
+    return text
 
 
 def __migrate__(old_chat_id, new_chat_id):

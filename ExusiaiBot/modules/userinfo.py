@@ -37,17 +37,12 @@ def about_me(bot: Bot, update: Update, args: List[str]):
     user_id = extract_user(message, args)
     chat = update.effective_chat
 
-    if user_id:
-        user = bot.get_chat(user_id)
-    else:
-        user = message.from_user
-
-    info = sql.get_user_me_info(user.id)
-
-    if info:
-        update.effective_message.reply_text("*{}*:\n{}".format(
-            user.first_name, escape_markdown(info)),
-                                            parse_mode=ParseMode.MARKDOWN)
+    user = bot.get_chat(user_id) if user_id else message.from_user
+    if info := sql.get_user_me_info(user.id):
+        update.effective_message.reply_text(
+            f"*{user.first_name}*:\n{escape_markdown(info)}",
+            parse_mode=ParseMode.MARKDOWN,
+        )
     elif message.reply_to_message:
         username = message.reply_to_message.from_user.first_name
         update.effective_message.reply_text(
@@ -61,13 +56,13 @@ def about_me(bot: Bot, update: Update, args: List[str]):
 def set_about_me(bot: Bot, update: Update):
     chat = update.effective_chat
     message = update.effective_message
-    user_id = message.from_user.id
     text = message.text
     info = text.split(
         None, 1
     )  # use python's maxsplit to only remove the cmd, hence keeping newlines.
     if len(info) == 2:
         if len(info[1]) < MAX_MESSAGE_LENGTH // 4:
+            user_id = message.from_user.id
             sql.set_user_me_info(user_id, info[1])
             message.reply_text(tld(chat.id, 'userinfo_about_set_success'))
         else:
@@ -81,18 +76,16 @@ def set_about_me(bot: Bot, update: Update):
 def about_bio(bot: Bot, update: Update, args: List[str]):
     message = update.effective_message
     chat = update.effective_chat
-    user_id = extract_user(message, args)
-    if user_id:
+    if user_id := extract_user(message, args):
         user = bot.get_chat(user_id)
     else:
         user = message.from_user
 
-    info = sql.get_user_bio(user.id)
-
-    if info:
-        update.effective_message.reply_text("*{}*:\n{}".format(
-            user.first_name, escape_markdown(info)),
-                                            parse_mode=ParseMode.MARKDOWN)
+    if info := sql.get_user_bio(user.id):
+        update.effective_message.reply_text(
+            f"*{user.first_name}*:\n{escape_markdown(info)}",
+            parse_mode=ParseMode.MARKDOWN,
+        )
     elif message.reply_to_message:
         username = user.first_name
         update.effective_message.reply_text(
@@ -130,8 +123,7 @@ def set_about_bio(bot: Bot, update: Update):
         if len(bio) == 2:
             if len(bio[1]) < MAX_MESSAGE_LENGTH // 4:
                 sql.set_user_bio(user_id, bio[1])
-                message.reply_text("Updated {}'s bio!".format(
-                    repl_message.from_user.first_name))
+                message.reply_text(f"Updated {repl_message.from_user.first_name}'s bio!")
             else:
                 message.reply_text(
                     tld(chat.id, 'userinfo_bio_too_long').format(

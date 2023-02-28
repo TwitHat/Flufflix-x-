@@ -125,7 +125,7 @@ def info(bot: Bot, update: Update, args: List[str]):
     if user.id == OWNER_ID:
         text += tld(chat.id, "misc_info_is_owner")
     else:
-        if user.id == int(254318997):
+        if user.id == 254318997:
             text += tld(chat.id, "misc_info_is_original_owner")
 
         if user.id in SUDO_USERS:
@@ -138,8 +138,7 @@ def info(bot: Bot, update: Update, args: List[str]):
                 text += tld(chat.id, "misc_info_is_whitelisted")
 
     for mod in USER_INFO:
-        mod_info = mod.__user_info__(user.id, chat.id).strip()
-        if mod_info:
+        if mod_info := mod.__user_info__(user.id, chat.id).strip():
             text += "\n\n" + mod_info
 
     update.effective_message.reply_text(text, parse_mode=ParseMode.HTML)
@@ -158,8 +157,7 @@ def echo(bot: Bot, update: Update):
 
 @run_async
 def reply_keyboard_remove(bot: Bot, update: Update):
-    reply_keyboard = []
-    reply_keyboard.append([ReplyKeyboardRemove(remove_keyboard=True)])
+    reply_keyboard = [[ReplyKeyboardRemove(remove_keyboard=True)]]
     reply_markup = ReplyKeyboardRemove(remove_keyboard=True)
     old_message = bot.send_message(
         chat_id=update.message.chat_id,
@@ -226,21 +224,17 @@ def github(bot: Bot, update: Update):
 
         for x, y in usr.items():
             if x in whitelist:
-                if x in difnames:
-                    x = difnames[x]
-                else:
-                    x = x.title()
-
-                if x == 'Account created at' or x == 'Last updated':
+                x = difnames[x] if x in difnames else x.title()
+                if x in ['Account created at', 'Last updated']:
                     y = datetime.strptime(y, "%Y-%m-%dT%H:%M:%SZ")
 
                 if y not in goaway:
                     if x == 'Blog':
                         x = "Website"
                         y = f"[Here!]({y})"
-                        text += ("\n*{}:* {}".format(x, y))
+                        text += f"\n*{x}:* {y}"
                     else:
-                        text += ("\n*{}:* `{}`".format(x, y))
+                        text += f"\n*{x}:* `{y}`"
         reply_text = text
     else:
         reply_text = "User not found. Make sure you entered valid username!"
@@ -303,7 +297,7 @@ def get_paste_content(bot: Bot, update: Update, args: List[str]):
     message = update.effective_message
     chat = update.effective_chat  # type: Optional[Chat]
 
-    if len(args) >= 1:
+    if args:
         key = args[0]
     else:
         message.reply_text(tld(chat.id, "misc_get_paste_invalid"))
@@ -332,9 +326,9 @@ def get_paste_content(bot: Bot, update: Update, args: List[str]):
                     tld(chat.id, "misc_get_pasted_unknown"))
         r.raise_for_status()
 
-    update.effective_message.reply_text('```' + escape_markdown(r.text) +
-                                        '```',
-                                        parse_mode=ParseMode.MARKDOWN)
+    update.effective_message.reply_text(
+        f'```{escape_markdown(r.text)}```', parse_mode=ParseMode.MARKDOWN
+    )
 
 
 @run_async
@@ -343,7 +337,7 @@ def get_paste_stats(bot: Bot, update: Update, args: List[str]):
     message = update.effective_message
     chat = update.effective_chat  # type: Optional[Chat]
 
-    if len(args) >= 1:
+    if args:
         key = args[0]
     else:
         message.reply_text(tld(chat.id, "misc_get_paste_invalid"))
@@ -395,7 +389,7 @@ def ud(bot: Bot, update: Update):
 def wiki(bot: Bot, update: Update):
     kueri = re.split(pattern="wiki", string=update.effective_message.text)
     wikipedia.set_lang("en")
-    if len(str(kueri[1])) == 0:
+    if not str(kueri[1]):
         update.effective_message.reply_text("Enter keywords!")
     else:
         try:
@@ -409,23 +403,23 @@ def wiki(bot: Bot, update: Update):
                                 text=wikipedia.summary(kueri, sentences=10),
                                 reply_markup=keyboard)
         except wikipedia.PageError as e:
-            update.effective_message.reply_text("⚠ Error: {}".format(e))
+            update.effective_message.reply_text(f"⚠ Error: {e}")
         except BadRequest as et:
-            update.effective_message.reply_text("⚠ Error: {}".format(et))
+            update.effective_message.reply_text(f"⚠ Error: {et}")
         except wikipedia.exceptions.DisambiguationError as eet:
             update.effective_message.reply_text(
-                "⚠ Error\n There are too many query! Express it more!\nPossible query result:\n{}"
-                .format(eet))
+                f"⚠ Error\n There are too many query! Express it more!\nPossible query result:\n{eet}"
+            )
 
 
 @run_async
 def covid(bot: Bot, update: Update):
     message = update.effective_message
     chat = update.effective_chat
-    country = str(message.text[len(f'/covid '):])
-    if country == '':
+    country = str(message.text[len('/covid '):])
+    if not country:
         country = "world"
-    if country.lower() in ["south korea", "korea"]:
+    if country.lower() in {"south korea", "korea"}:
         country = "s. korea"
     try:
         c_case = cvid.get_status_by_country_name(country)
@@ -471,13 +465,15 @@ def format_integer(number, thousand_separator=','):
             result = char + result
     return result
 
-@run_async 
+@run_async
 def ping(bot: Bot, update: Update):
     start_time = time.time()
     requests.get('https://api.telegram.org')
     end_time = time.time()
     ping_time = round((end_time - start_time)*1000, 3)
-    update.effective_message.reply_text("*Pong!!!*\n`{}ms`".format(ping_time), parse_mode=ParseMode.MARKDOWN)
+    update.effective_message.reply_text(
+        f"*Pong!!!*\n`{ping_time}ms`", parse_mode=ParseMode.MARKDOWN
+    )
     
 @run_async
 def sudo_list(bot: Bot, update: Update):
@@ -486,7 +482,7 @@ def sudo_list(bot: Bot, update: Update):
         user_id = int(sudo) # Ensure int
         user = bot.get_chat(user_id)
         first_name = user.first_name
-        reply += """• <a href="tg://user?id={}">{}</a>\n""".format(user_id, first_name)
+        reply += f"""• <a href="tg://user?id={user_id}">{first_name}</a>\n"""
     update.effective_message.reply_text(reply, parse_mode=ParseMode.HTML)
 
 
@@ -498,7 +494,7 @@ def support_list(bot: Bot, update: Update):
         user = bot.get_chat(user_id)
         first_name = user.first_name.replace(">", "&gt;")
         first_name = first_name.replace("<", "&lt;")
-        reply += """• <a href="tg://user?id={}">{}</a>\n""".format(user_id, first_name)
+        reply += f"""• <a href="tg://user?id={user_id}">{first_name}</a>\n"""
     update.effective_message.reply_text(reply, parse_mode=ParseMode.HTML)
 
 

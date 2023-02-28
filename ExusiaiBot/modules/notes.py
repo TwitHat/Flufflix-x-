@@ -61,8 +61,7 @@ ENUM_FUNC_MAP = {
 def get(bot, update, notename, show_none=True, no_format=False):
     chat = update.effective_chat
     user = update.effective_user
-    conn = connected(bot, update, chat, user.id, need_admin=False)
-    if conn:
+    if conn := connected(bot, update, chat, user.id, need_admin=False):
         chat_id = conn
         send_id = user.id
     else:
@@ -75,8 +74,7 @@ def get(bot, update, notename, show_none=True, no_format=False):
     if note:
         pass
     elif notename[0] == "#":
-        hashnote = sql.get_note(chat_id, notename[1:])
-        if hashnote:
+        if hashnote := sql.get_note(chat_id, notename[1:]):
             note = hashnote
     elif show_none:
         message.reply_text(tld(chat.id, "note_not_existed"))
@@ -95,11 +93,10 @@ def get(bot, update, notename, show_none=True, no_format=False):
                                     from_chat_id=MESSAGE_DUMP,
                                     message_id=note.value)
             except BadRequest as excp:
-                if excp.message == "Message to forward not found":
-                    message.reply_text(tld(chat.id, "note_lost"))
-                    sql.rm_note(chat_id, notename)
-                else:
+                if excp.message != "Message to forward not found":
                     raise
+                message.reply_text(tld(chat.id, "note_lost"))
+                sql.rm_note(chat_id, notename)
         else:
             try:
                 bot.forward_message(chat_id=chat_id,
@@ -114,11 +111,7 @@ def get(bot, update, notename, show_none=True, no_format=False):
             else:
                 raise
     else:
-        if note:
-            text = note.value
-        else:
-            text = None
-
+        text = note.value if note else None
         keyb = []
         parseMode = ParseMode.MARKDOWN
         buttons = sql.get_buttons(chat_id, notename)
@@ -143,19 +136,17 @@ def get(bot, update, notename, show_none=True, no_format=False):
                 except BadRequest as excp:
                     if excp.message == "Wrong http url":
                         failtext = tld(chat.id, "note_url_invalid")
-                        failtext += "\n\n```\n{}```".format(
-                            note.value + revert_buttons(buttons))
+                        failtext += f"\n\n```\n{note.value + revert_buttons(buttons)}```"
                         message.reply_text(failtext, parse_mode="markdown")
 
-            else:
-                if note:
-                    ENUM_FUNC_MAP[note.msgtype](send_id,
-                                                note.file,
-                                                caption=text,
-                                                reply_to_message_id=reply_id,
-                                                parse_mode=parseMode,
-                                                disable_web_page_preview=True,
-                                                reply_markup=keyboard)
+            elif note:
+                ENUM_FUNC_MAP[note.msgtype](send_id,
+                                            note.file,
+                                            caption=text,
+                                            reply_to_message_id=reply_id,
+                                            parse_mode=parseMode,
+                                            disable_web_page_preview=True,
+                                            reply_markup=keyboard)
 
         except BadRequest as excp:
             if excp.message == "Entity_mention_user_invalid":
@@ -198,8 +189,7 @@ def hash_get(bot: Bot, update: Update):
 def save(bot: Bot, update: Update):
     chat = update.effective_chat
     user = update.effective_user
-    conn = connected(bot, update, chat, user.id)
-    if conn:
+    if conn := connected(bot, update, chat, user.id):
         chat_id = conn
         chat_name = dispatcher.bot.getChat(conn).title
     else:
@@ -250,8 +240,7 @@ def save(bot: Bot, update: Update):
 def clear(bot: Bot, update: Update, args: List[str]):
     chat = update.effective_chat
     user = update.effective_user
-    conn = connected(bot, update, chat, user.id)
-    if conn:
+    if conn := connected(bot, update, chat, user.id):
         chat_id = conn
         chat_name = dispatcher.bot.getChat(conn).title
     else:
@@ -261,7 +250,7 @@ def clear(bot: Bot, update: Update, args: List[str]):
         else:
             chat_name = chat.title
 
-    if len(args) >= 1:
+    if args:
         notename = args[0].lower()
 
         if sql.rm_note(chat_id, notename):
@@ -277,8 +266,7 @@ def clear(bot: Bot, update: Update, args: List[str]):
 def list_notes(bot: Bot, update: Update):
     chat = update.effective_chat
     user = update.effective_user
-    conn = connected(bot, update, chat, user.id, need_admin=False)
-    if conn:
+    if conn := connected(bot, update, chat, user.id, need_admin=False):
         chat_id = conn
         chat_name = dispatcher.bot.getChat(conn).title
         msg = tld(chat.id, "note_in_chat")
@@ -294,7 +282,7 @@ def list_notes(bot: Bot, update: Update):
     note_list = sql.get_all_chat_notes(chat_id)
 
     for note in note_list:
-        note_name = " • `#{}`\n".format(note.name.lower())
+        note_name = f" • `#{note.name.lower()}`\n"
         if len(msg) + len(note_name) > MAX_MESSAGE_LENGTH:
             update.effective_message.reply_text(msg,
                                                 parse_mode=ParseMode.MARKDOWN)
@@ -349,8 +337,7 @@ def remove_all_notes(bot: Bot, update: Update):
 
 
 def __stats__():
-    return "• `{}` notes, accross `{}` chats.".format(sql.num_notes(),
-                                                      sql.num_chats())
+    return f"• `{sql.num_notes()}` notes, accross `{sql.num_chats()}` chats."
 
 
 def __migrate__(old_chat_id, new_chat_id):

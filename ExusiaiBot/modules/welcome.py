@@ -146,27 +146,24 @@ def new_member(bot: Bot, update: Update):
                 return
 
             if sw != None:
-                sw_ban = sw.get_ban(new_mem.id)
-                if sw_ban:
+                if sw_ban := sw.get_ban(new_mem.id):
                     return
 
             if new_mem.id == bot.id:
                 bot.send_message(
                     MESSAGE_DUMP,
-                    "I have been added to {} with ID: <pre>{}</pre>".format(
-                        chat.title, chat.id),
-                    parse_mode=ParseMode.HTML)
+                    f"I have been added to {chat.title} with ID: <pre>{chat.id}</pre>",
+                    parse_mode=ParseMode.HTML,
+                )
                 bot.send_message(chat.id, tld(chat.id, 'welcome_added_to_grp'))
 
             else:
                 if is_user_gbanned(new_mem.id):
                     return
                 # If welcome message is media, send with appropriate function
-                if welc_type != sql.Types.TEXT and welc_type != sql.Types.BUTTON_TEXT:
+                if welc_type not in [sql.Types.TEXT, sql.Types.BUTTON_TEXT]:
                     reply = update.message.message_id
-                    cleanserv = sql.clean_service(chat.id)
-                    # Clean service welcome
-                    if cleanserv:
+                    if cleanserv := sql.clean_service(chat.id):
                         try:
                             dispatcher.bot.delete_message(
                                 chat.id, update.message.message_id)
@@ -176,16 +173,12 @@ def new_member(bot: Bot, update: Update):
                     # Formatting text
                     first_name = new_mem.first_name or "PersonWithNoName"  # edge case of empty name - occurs for some bugs.
                     if new_mem.last_name:
-                        fullname = "{} {}".format(first_name,
-                                                  new_mem.last_name)
+                        fullname = f"{first_name} {new_mem.last_name}"
                     else:
                         fullname = first_name
                     count = chat.get_members_count()
                     mention = mention_html(new_mem.id, first_name)
-                    if new_mem.username:
-                        username = "@" + escape(new_mem.username)
-                    else:
-                        username = mention
+                    username = f"@{escape(new_mem.username)}" if new_mem.username else mention
                     formatted_text = cust_welcome.format(
                         first=escape(first_name),
                         last=escape(new_mem.last_name or first_name),
@@ -242,12 +235,14 @@ def new_member(bot: Bot, update: Update):
                         # If security welcome is turned on
                         if canrest:
                             sql.add_to_userlist(chat.id, new_mem.id)
-                            keyb.append([
-                                InlineKeyboardButton(
-                                    text=str(custom_text),
-                                    callback_data="check_bot_({})".format(
-                                        new_mem.id))
-                            ])
+                            keyb.append(
+                                [
+                                    InlineKeyboardButton(
+                                        text=str(custom_text),
+                                        callback_data=f"check_bot_({new_mem.id})",
+                                    )
+                                ]
+                            )
                     keyboard = InlineKeyboardMarkup(keyb)
                     # Send message
                     ENUM_FUNC_MAP[welc_type](chat.id,
@@ -262,17 +257,12 @@ def new_member(bot: Bot, update: Update):
 
                 if cust_welcome:
                     if new_mem.last_name:
-                        fullname = "{} {}".format(first_name,
-                                                  new_mem.last_name)
+                        fullname = f"{first_name} {new_mem.last_name}"
                     else:
                         fullname = first_name
                     count = chat.get_members_count()
                     mention = mention_html(new_mem.id, first_name)
-                    if new_mem.username:
-                        username = "@" + escape(new_mem.username)
-                    else:
-                        username = mention
-
+                    username = f"@{escape(new_mem.username)}" if new_mem.username else mention
                     valid_format = escape_invalid_curly_brackets(
                         cust_welcome, VALID_WELCOME_FORMATTERS)
                     res = valid_format.format(first=escape(first_name),
@@ -331,20 +321,21 @@ def new_member(bot: Bot, update: Update):
 
                     if canrest:
                         sql.add_to_userlist(chat.id, new_mem.id)
-                        keyb.append([
-                            InlineKeyboardButton(
-                                text=str(custom_text),
-                                callback_data="check_bot_({})".format(
-                                    new_mem.id))
-                        ])
+                        keyb.append(
+                            [
+                                InlineKeyboardButton(
+                                    text=str(custom_text),
+                                    callback_data=f"check_bot_({new_mem.id})",
+                                )
+                            ]
+                        )
                 keyboard = InlineKeyboardMarkup(keyb)
 
                 sent = send(update, res, keyboard,
                             sql.DEFAULT_WELCOME.format(
                                 first=first_name))  # type: Optional[Message]
 
-            prev_welc = sql.get_clean_pref(chat.id)
-            if prev_welc:
+            if prev_welc := sql.get_clean_pref(chat.id):
                 try:
                     bot.delete_message(chat.id, prev_welc)
                 except BadRequest as excp:

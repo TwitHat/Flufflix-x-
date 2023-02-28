@@ -46,11 +46,10 @@ def message_parser(message):
     BUTTONS_REGEX_MATCHER = re.findall(BTN_URL_REGEX, new_string)
     buttons = []
     if BUTTONS_REGEX_MATCHER:
-        for button in BUTTONS_REGEX_MATCHER:
-            btn_name = button[1]
-            btn_url = button[2]
-            same_row = bool(button[3])
-            buttons.append((btn_name, btn_url, same_row))
+        buttons.extend(
+            (button[1], button[2], bool(button[3]))
+            for button in BUTTONS_REGEX_MATCHER
+        )
         string = re.sub(BTN_URL_REGEX, '', new_string)
     else:
         string = new_string

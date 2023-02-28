@@ -35,7 +35,7 @@ from telegram.utils.helpers import escape_markdown
 from ExusiaiBot.modules.helper_funcs.extraction import extract_user
 from ExusiaiBot.modules.tr_engine.strings import tld, tld_list
 
-WIDE_MAP = dict((i, i + 0xFEE0) for i in range(0x21, 0x7F))
+WIDE_MAP = {i: i + 0xFEE0 for i in range(0x21, 0x7F)}
 WIDE_MAP[0x20] = 0x3000
 
 # D A N K modules by @deletescape vvv
@@ -69,11 +69,11 @@ def owo(bot: Bot, update: Update, args: List[str]):
     reply_text = re.sub(r'ｎ([ａｅｉｏｕ])', r'ｎｙ\1', reply_text)
     reply_text = re.sub(r'N([aeiouAEIOU])', r'Ny\1', reply_text)
     reply_text = re.sub(r'Ｎ([ａｅｉｏｕＡＥＩＯＵ])', r'Ｎｙ\1', reply_text)
-    reply_text = re.sub(r'\!+', ' ' + random.choice(faces), reply_text)
-    reply_text = re.sub(r'！+', ' ' + random.choice(faces), reply_text)
+    reply_text = re.sub(r'\!+', f' {random.choice(faces)}', reply_text)
+    reply_text = re.sub(r'！+', f' {random.choice(faces)}', reply_text)
     reply_text = reply_text.replace("ove", "uv")
     reply_text = reply_text.replace("ｏｖｅ", "ｕｖ")
-    reply_text += ' ' + random.choice(faces)
+    reply_text += f' {random.choice(faces)}'
 
     if noreply:
         message.reply_text(reply_text)
@@ -174,7 +174,7 @@ def deepfryer(bot: Bot, update: Update):
     if data:
         photodata = data[len(data) - 1].get_file().download_as_bytearray()
         image = Image.open(io.BytesIO(photodata))
-    elif data2:
+    else:
         sticker = bot.get_file(data2.file_id)
         sticker.download('sticker.png')
         image = Image.open("sticker.png")
@@ -219,10 +219,11 @@ def shout(bot: Bot, update: Update, args: List[str]):
         data = tld(chat.id, "memes_no_message")
 
     msg = "```"
-    result = []
-    result.append(' '.join([s for s in data]))
-    for pos, symbol in enumerate(data[1:]):
-        result.append(symbol + ' ' + '  ' * pos + symbol)
+    result = [' '.join(list(data))]
+    result.extend(
+        f'{symbol} ' + '  ' * pos + symbol
+        for pos, symbol in enumerate(data[1:])
+    )
     result = list("\n".join(result))
     result[0] = data[0]
     result = "".join(result)
@@ -259,27 +260,23 @@ def slap(bot: Bot, update: Update, args: List[str]):
 
     # get user who sent message
     if msg.from_user.username:
-        curr_user = "@" + escape_markdown(msg.from_user.username)
+        curr_user = f"@{escape_markdown(msg.from_user.username)}"
     else:
-        curr_user = "[{}](tg://user?id={})".format(msg.from_user.first_name,
-                                                   msg.from_user.id)
+        curr_user = f"[{msg.from_user.first_name}](tg://user?id={msg.from_user.id})"
 
-    user_id = extract_user(update.effective_message, args)
-    if user_id:
+    if user_id := extract_user(update.effective_message, args):
         slapped_user = bot.get_chat(user_id)
         user1 = curr_user
         if slapped_user.username == "RealAkito":
             reply_text(tld(chat.id, "memes_not_doing_that"))
             return
         if slapped_user.username:
-            user2 = "@" + escape_markdown(slapped_user.username)
+            user2 = f"@{escape_markdown(slapped_user.username)}"
         else:
-            user2 = "[{}](tg://user?id={})".format(slapped_user.first_name,
-                                                   slapped_user.id)
+            user2 = f"[{slapped_user.first_name}](tg://user?id={slapped_user.id})"
 
-    # if no target found, bot targets the sender
     else:
-        user1 = "[{}](tg://user?id={})".format(bot.first_name, bot.id)
+        user1 = f"[{bot.first_name}](tg://user?id={bot.id})"
         user2 = curr_user
 
     temp = random.choice(tld_list(chat.id, "memes_slaps_templates_list"))
